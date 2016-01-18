@@ -10526,18 +10526,36 @@ Elm.Main.make = function (_elm) {
    $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $Random = Elm.Random.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var upperView = function (colorToFind) {
-      return A2($Html.div,_U.list([]),_U.list([A2($Html.p,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Click index: ",colorToFind))]))]));
+   var update = F2(function (action,model) {
+      var _p0 = action;
+      if (_p0.ctor === "NoOp") {
+            return model;
+         } else {
+            return _U.update(model,{lastClick: _p0._0});
+         }
+   });
+   var upperView = function (indexToClick) {
+      return A2($Html.div,_U.list([]),_U.list([A2($Html.p,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Click index: ",indexToClick))]))]));
    };
    var inbox = $Signal.mailbox("");
    var indexMessage = inbox.signal;
+   var Model = F4(function (a,b,c,d) {    return {numbers: a,randomNumber: b,lastClick: c,points: d};});
+   var initialSeed = $Random.initialSeed(1234);
+   var initialModel = {numbers: A2($List.map,$Basics.toString,_U.range(1,10))
+                      ,randomNumber: {ctor: "_Tuple2",_0: initialSeed,_1: $Basics.toString(A2($Random.generate,A2($Random.$int,0,10),initialSeed))}
+                      ,lastClick: ""
+                      ,points: 0};
+   var ClickIndex = function (a) {    return {ctor: "ClickIndex",_0: a};};
+   var NoOp = {ctor: "NoOp"};
+   var numberInbox = $Signal.mailbox(NoOp);
    var singleColorView = function (index) {
       return A2($Html.a,
       _U.list([$Html$Attributes.href("#")
-              ,A2($Html$Events.onClick,inbox.address,index)
+              ,A2($Html$Events.onClick,numberInbox.address,ClickIndex(index))
               ,A2($Html$Attributes.attribute,"data-index",index)
               ,$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "background",_1: "blue"}
                                               ,{ctor: "_Tuple2",_0: "padding",_1: "20px"}
@@ -10545,14 +10563,32 @@ Elm.Main.make = function (_elm) {
                                               ,{ctor: "_Tuple2",_0: "color",_1: "white"}]))]),
       _U.list([$Html.text(index)]));
    };
-   var view = function (indexMessage) {
+   var view = F2(function (action,model) {
       return A2($Html.div,
       _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "margin",_1: "50px"}]))]),
       _U.list([A2($Html.ul,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "margin-bottom",_1: "50px"}]))]),
               A2($List.map,singleColorView,A2($List.map,$Basics.toString,_U.range(1,10))))
-              ,$Html.text(A2($Basics._op["++"],"Index choosen was:  ",indexMessage))]));
-   };
-   var main = A2($Signal.map,view,indexMessage);
-   return _elm.Main.values = {_op: _op,inbox: inbox,indexMessage: indexMessage,upperView: upperView,singleColorView: singleColorView,view: view,main: main};
+              ,$Html.text(A2($Basics._op["++"],"Number to click was: ",$Basics.snd(model.randomNumber)))
+              ,$Html.text(A2($Basics._op["++"],"Index choosen was:  ",model.lastClick))]));
+   });
+   var actions = numberInbox.signal;
+   var model = A3($Signal.foldp,update,initialModel,actions);
+   var main = A2($Signal.map,view(numberInbox.address),model);
+   return _elm.Main.values = {_op: _op
+                             ,NoOp: NoOp
+                             ,ClickIndex: ClickIndex
+                             ,initialSeed: initialSeed
+                             ,Model: Model
+                             ,initialModel: initialModel
+                             ,inbox: inbox
+                             ,indexMessage: indexMessage
+                             ,upperView: upperView
+                             ,singleColorView: singleColorView
+                             ,view: view
+                             ,model: model
+                             ,update: update
+                             ,numberInbox: numberInbox
+                             ,actions: actions
+                             ,main: main};
 };
