@@ -5,26 +5,15 @@ import Random
 import Array
 import Json.Decode as Json
 import Debug exposing (..)
+import Time exposing (..)
 
-type Action = NoOp | ClickIndex String
+import Model exposing (..)
 
-initialSeed = Random.initialSeed 1234
-
-type alias Model =
-  { numbers : List String
-  , randomNumber : (Random.Seed, String)
-  , lastClick : String
-  , points : Int
-  }
+type Action = NoOp | Tick | ClickIndex String
 
 
-initialModel : Model
-initialModel =
-   { numbers = List.map toString [1..10]
-   , randomNumber = (initialSeed, toString <| Random.generate (Random.int 0 10) initialSeed)
-   , lastClick = ""
-   , points = 0
-   }
+ticks : Signal Action
+ticks = Signal.map (\_ -> Tick) (Time.fps 1)
 
 
 inbox : Signal.Mailbox String
@@ -61,7 +50,9 @@ view  action model =
   div [ style [("margin", "50px")]]
     [ ul [ style [("margin-bottom", "50px")] ]
         (List.map singleColorView (List.map toString [1..10]))
-    , text ("Number to click was: " ++ snd model.randomNumber)
+    , p [ ]
+        [ text ("Timer " ++ toString model.timer) ]
+    , text ("Number to click was: " ++ (snd model.randomNumber))
     , text ("Index choosen was:  " ++ model.lastClick)
     ]
 
@@ -70,13 +61,17 @@ model : Signal Model
 model =
   Signal.foldp update initialModel actions
 
+
 update : Action -> Model -> Model
 update action model =
   case action of
     NoOp
       -> model
+    Tick
+      -> { model | timer = model.timer - 1 }
     ClickIndex index
       -> { model | lastClick = index }
+
 
 numberInbox : Signal.Mailbox Action
 numberInbox =
@@ -85,7 +80,7 @@ numberInbox =
 
 actions : Signal Action
 actions =
-  numberInbox.signal
+  Signal.merge numberInbox.signal ticks
 
 
 main : Signal Html
